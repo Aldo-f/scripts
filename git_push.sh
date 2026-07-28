@@ -9,7 +9,7 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_FILE="~/scripts/git_push.log"
 GIT_USER=" Aldo"
-GIT_EMAIL="aldo@example.com"
+GIT_EMAIL="aldo.fieuw@gmail.com"
 
 cd "$REPO_DIR" || exit 1
 
