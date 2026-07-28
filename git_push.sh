@@ -29,9 +29,8 @@ if ! git diff --cached --quiet; then
     git commit -m "Auto-commit $TIMESTAMP — health check update"
 fi
 
-# --- Pull any remote updates (force with --allow-unsafe-overrides) ---
-#       This avoids a "non-fast-forward" error when merging forked repos.
-git pull --allow-unsafe-overrides origin main
+# --- Pull any remote updates ---
+git pull origin main
 
 # --- Push changes ---
 #       Using --force-with-lease for safety while allowing updates.
