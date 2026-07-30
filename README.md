@@ -1,22 +1,22 @@
-# SSD Health Monitor
+# Scripts Knowledge Base
 
-This repository contains scripts to monitor the health of a USB-connected SSD on a Raspberry Pi 5.
+A collection of automation, infrastructure maintenance, and development helper scripts.
 
-## Scripts
+## Directory Structure
 
-- **`ssd_health.py`** - Runs a short stress test, logs temperature, and writes results to `~/scripts/ssd_health.log`.
-- **`git_push.sh`** - Commits any changes (e.g., updated log file) and pushes them to GitHub.
+- `git-tools/` : Git automation (pushing, hooks)
+- `opencode-init-deep/` : Hierarchical AGENTS.md initialization automation
+- `ssd-tools/` : SSD health monitoring and stress testing
 
-## Schedule
+## Common Usage
 
-- **Health check**: Runs daily at **03:00** via cron.
-- **Git push**: Runs daily at **05:00** to sync any changes to GitHub.
+### Automated Knowledge Base Initialization
+- Run: `~/scripts/opencode-init-deep/init-deep-cron.sh`
+- Cron entry (02:00 nightly): `0 2 * * * /home/aldo/scripts/opencode-init-deep/init-deep-cron.sh`
 
-## Logs
+### SSD Maintenance
+- Check health: `./ssd-tools/ssd_health.py`
+- Stress test: `./ssd-tools/stress_test_ssd.py`
 
-- `~/scripts/ssd_health.log` – Timestamped temperature and error status.
-- `~/scripts/git_push.log` – Output from the push operation.
-
-## GitHub
-
-View on GitHub: [github.com/yourusername/aldo-ssd-monitor](https://github.com/yourusername/aldo-ssd-monitor)
+### Git Maintenance
+- Push changes: `./git-tools/git_push.sh`
