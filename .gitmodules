@@ -1,0 +1,3 @@
+[submodule "deezer"]
+	path = deezer
+	url = git@github.com:Aldo-f/deezer.git
