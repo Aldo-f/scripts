@@ -23,6 +23,14 @@ scripts/
 
 # Run Google dry-run with default limit (3)
 cd ~/dev/06-apps-script-google/LabelReminder && clasp run dryRunWithMax
+
+# Deezer music download (uses ~/.venvs/deezer venv)
+~/scripts/deezer/scripts/deezer.py download-playlist "https://www.deezer.com/playlist/..." --workers 4
+~/scripts/deezer/scripts/deezer.py search "artist track"
+~/scripts/deezer/scripts/deezer.py whoami
+
+# Run deezer tests
+~/.venvs/deezer/bin/python -m pytest ~/scripts/deezer/tests/
 ```
 
 ## NOTES
