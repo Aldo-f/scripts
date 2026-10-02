@@ -1,0 +1,14 @@
+# Email search artifacts
+email_queries.db
+email_queries.db-journal
+*.tmp
+__pycache__/
+*.pyc
+
+# Cache / logs
+*.log
+.cache/
+
+# User secrets
+.env
+secrets/

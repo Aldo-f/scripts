@@ -9,11 +9,11 @@ A collection of automation, infrastructure maintenance, and development helper s
 - **`google-workspace/`**: Google Workspace helper scripts (clasp, tailing logs, dry-runs).
 - **`opencode-init-deep/`**: Hierarchical `AGENTS.md` initialization automation.
 - **`ssd-tools/`**: SSD health monitoring and stress testing optimized for Pi 5 with USB SSDs.
-
-## Root Scripts
-
-- **`hermes_backup.sh`**: Daily skills push to GitHub + weekly full Hermes backup zip (saved locally).
-- **`fetch_free_models.py`**: Fetches and lists all active free models from providers.
+- **`hermes-tools/`**: Daily skills push to GitHub + weekly full Hermes backup zip (saved locally).
+- **`hermes-memory/`**: Qdrant mem0 memory CLI.
+- **`pi-monitor/`**: k3s node readiness monitor (every 5 min).
+- **`model-fetcher/`**: Fetches and lists all active free models from providers.
+- **`bookstack-checker/`**: BookStack reference URL checker.
 
 ## Common Usage
 

@@ -1,0 +1,55 @@
+# Self-Improving Form Automation v2.0 Configuration
+
+form:
+  url: "https://docs.google.com/forms/d/e/1FAIpQLSdvvFc-7Q3ZMGHBUUrBHtVO0tkKj0bUVrT-3sJYI4CIxoJ3RA/viewform"
+  fields:
+    email:
+      selector: 'input[type="email"]'
+      value: "chiefmommy@web-library.net"
+    competition_question:
+      selector: 'input[type="text"] >> nth=0'
+      value: "Waarom bleef je niet voor mij?"
+    tiebreaker_question:
+      selector: 'input[type="text"] >> nth=1'
+      value: "${counter}"
+  submit:
+    - selector: 'div[jsname="M2UYVd"]'
+    - selector: 'div[role="button"]:has-text("Verzenden")'
+    - selector: 'div[role="button"]:has-text("Envoyer")'
+    - selector: 'div[role="button"]:has-text("Submit")'
+  confirmation:
+    - '.freebirdFormviewerViewResponseConfirmationMessage'
+
+# Browser settings
+browser:
+  type: "chromium"  # chromium or camoufox
+  headless: false
+  timeout: 30000
+
+# CAPTCHA solving
+captcha:
+  use_whisper: true
+  use_tesseract: true
+  use_buster: true
+  manual_fallback: true
+  audio_timeout: 60
+
+# AI Improvement settings
+ai_improvement:
+  enabled: true
+  failure_threshold: 10
+  model: "auto"
+  endpoint: "https://freellm.aldof.duckdns.org/v1"
+  auto_apply_patches: true
+  patch_types:
+    - selector
+    - timeout
+    - retry
+    - captcha
+    - config
+
+# Logging
+logging:
+  level: "INFO"
+  screenshots_on_error: true
+  audio_buffer_on_captcha: true

@@ -16,13 +16,13 @@ Automation utilities for hierarchical `AGENTS.md` initialization across `/home/a
 Recommended cron format (running daily at 02:00):
 
 ```cron
-0 2 * * * /home/aldo/scripts/opencode-init-deep/init-deep-cron.sh
+0 2 * * * /home/aldo/dev/scripts/opencode-init-deep/init-deep-cron.sh
 ```
 
 ### Manual Sequential Trigger
 
 ```bash
-/home/aldo/scripts/opencode-init-deep/trigger-both.sh
+/home/aldo/dev/scripts/opencode-init-deep/trigger-both.sh
 ```
 
 ## Log Format

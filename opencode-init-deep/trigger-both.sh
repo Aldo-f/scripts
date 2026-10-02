@@ -6,7 +6,7 @@
 # IMPORTANT (user requirement): every line written to the log file is
 # prefixed with a timestamp "[YYYY-MM-DD HH:MM:SS] ".
 
-SCRIPT_DIR="/home/aldo/scripts"
+SCRIPT_DIR="/home/aldo/dev/scripts"
 LOG_DIR="$SCRIPT_DIR/opencode-init-deep"
 LOG_FILE="$LOG_DIR/direct-exec.log"
 
