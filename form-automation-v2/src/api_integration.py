@@ -3,7 +3,7 @@ FreLLM API Integration - Config & Utility Functions
 
 The FreLLM API endpoint is configured at:
   - Base URL: http://192.168.0.5:3001/v1
-  - API Token: freellmapi-82ea901092bf963260f3ea5fe1e1a02e3995a488b4f186e1
+  - API Token: <set via FREELLMAPI_API_KEY env var>
 
 This module handles:
   1. API authentication (Bearer token)
@@ -23,7 +23,8 @@ logger = logging.getLogger("freellm_api")
 
 # FreLLM API Configuration
 API_BASE_URL = "http://192.168.0.5:3001/v1"
-API_TOKEN = "freellmapi-82ea901092bf963260f3ea5fe1e1a02e3995a488b4f186e1"
+import os
+API_TOKEN = os.getenv("FREELLMAPI_API_KEY", "")
 
 
 def get_api_headers():

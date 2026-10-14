@@ -13,7 +13,8 @@ logger = logging.getLogger("form_automation.ai_improver")
 
 # FreLLM API Configuration
 API_BASE_URL = "http://192.168.0.5:3001/v1"
-API_TOKEN = "freellmapi-82ea901092bf963260f3ea5fe1e1a02e3995a488b4f186e1"
+import os
+API_TOKEN = os.getenv("FREELLMAPI_API_KEY", "")
 
 # Config file paths
 CONFIG_PATH = Path.home() / "scripts" / "form-automation-v2" / "config" / "config_v2.yaml"

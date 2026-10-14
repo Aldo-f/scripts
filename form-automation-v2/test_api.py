@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 
 API_BASE_URL = "http://192.168.0.5:3001/v1"
-API_TOKEN = "freellmapi-893cc5a20ad598f62880e287ac46914c7f8cd0611f1890fe"
+API_TOKEN = os.getenv("FREELLMAPI_API_KEY", "freellmapi-YOUR-KEY-HERE")
 
 def test_health_endpoint():
     """Test the health endpoint."""

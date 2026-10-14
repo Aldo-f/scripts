@@ -88,7 +88,7 @@ def solve_recaptcha(target_url_param, timeout=120):
     whisper_model = WhisperModel("tiny", device="cpu", compute_type="float32")
     
     # Path to Buster extension
-    buster_addon = "/mnt/HDD1/dev/06-apps-urbanfix/tools/buster/buster_extension_firefox"
+    buster_addon = os.path.expanduser("~/dev/06-apps-urbanfix/tools/buster/buster_extension_firefox")
     
     # Start Camoufox in virtual headless mode
     print("Starting Camoufox (Buster + Whisper)...")
@@ -105,14 +105,14 @@ def solve_recaptcha(target_url_param, timeout=120):
         
         # Intercept reCAPTCHA api2 requests
         print("Intercepting reCAPTCHA api2 requests...")
-        context.route("**/recaptcha/api2/**", lambda route: (
-            url := route.request.url,
-            new_url := (
-                url + ("&" if "?" in url else "?") + "hl=en"
-                if "hl=" not in url else url.replace("hl=nl", "hl=en")
-            ),
+        def _recaptcha_route(route):
+            url = route.request.url
+            if "hl=" in url:
+                new_url = url.replace("hl=nl", "hl=en").replace("hl=de", "hl=en")
+            else:
+                new_url = url + ("&" if "?" in url else "?") + "hl=en"
             route.continue_(url=new_url)
-        ))[2]
+        context.route("**/recaptcha/api2/**", _recaptcha_route)
         
         page = context.new_page()
         
@@ -133,20 +133,45 @@ def solve_recaptcha(target_url_param, timeout=120):
                 if (src && src.includes('recaptcha/api2/anchor')) {
                     let newSrc = src.replace(/&hl=[^&]*/g, '').replace(/\\?hl=[^&]*/g, '');
                     newSrc += (newSrc.includes('?') ? '?' : '?') + 'hl=en';
-                    iframe.setAttribute('src', newSrc);
+                    frame.setAttribute('src', newSrc);
                 }
             });
         """)
         page.wait_for_timeout(2000)
         
-        # Find the reCAPTCHA anchor iframe
-        anchor_frame = page.frame(url="**/recaptcha/api2/anchor")
-        if not anchor_frame:
+        # Find the reCAPTCHA anchor iframe - wait for it to appear
+        print("Waiting for reCAPTCHA iframe...")
+        anchor_frame = None
+        for attempt in range(10):
+            try:
+                # Try to find by URL pattern
+                anchor_frame = page.frame("**/recaptcha/api2/anchor")
+                if anchor_frame:
+                    print("Found reCAPTCHA via URL pattern")
+                    break
+            except:
+                pass
             # Fallback: search through frames
             for frame in page.frames:
-                if "recaptcha/api2/bframe" in frame.url:
+                if "recaptcha/api2" in frame.url and "bframe" not in frame.url:
                     anchor_frame = frame
+                    print(f"Found reCAPTCHA via frame search: {frame.url}")
                     break
+            if anchor_frame:
+                break
+            print(f"Waiting for reCAPTCHA... attempt {attempt+1}/10")
+            page.wait_for_timeout(3000)
+        
+        if not anchor_frame:
+            # Last resort: look for checkbox on main page
+            print("Could not find reCAPTCHA iframe, trying to locate checkbox directly...")
+            try:
+                checkbox = page.locator(".recaptcha-checkbox-border").first
+                if checkbox.is_visible(timeout=5000):
+                    anchor_frame = page.main_frame
+                    print("Found reCAPTCHA checkbox directly on page")
+            except:
+                pass
         
         if not anchor_frame:
             print("⚠ No reCAPTCHA found - page may not need solving")
@@ -180,30 +205,31 @@ def solve_recaptcha(target_url_param, timeout=120):
                     audio_btn.click()
                     page.wait_for_timeout(3000)
                     save_screenshot(page, "05_audio_challenge")
-                    
+
                     # Download and transcribe audio
                     mp3_path = f"/tmp/captcha_audio_{int(time.time())}.mp3"
-                    resp = requests.get(audio_source.src, timeout=30)
+                    audio_src = audio_source.get_attribute("src")
+                    resp = requests.get(audio_src, timeout=30)
                     resp.raise_for_status()
                     with open(mp3_path, "wb") as f:
                         f.write(resp.content)
-                    
+
                     transcription = transcribe_audio(mp3_path, whisper_model)
                     if transcription:
                         # Fill the audio response field
-                        page.evaluate("""(arg) => {
+                        page.evaluate("""(transcription) => {
                             const ta = document.querySelector('#audio-response');
                             if (ta) ta.value = transcription;
-                        }""")
+                        }""", transcription)
                         page.wait_for_timeout(1000)
                         save_screenshot(page, "06_audio_submitted")
-                        
+
                         # Verify checkbox is now checked
                         if anchor_frame.locator(".recaptcha-checkbox-checked").count() > 0:
-                            print("✓ reCAPTCHA solved via audio challenge!")
+                            print("\u2713 reCAPTCHA solved via audio challenge!")
                             save_screenshot(page, "07_audio_solved")
                             return True
-        
+
         # If still not solved, try the fallback path
         print("Still not solved - trying fallback path...")
         # Look for submit button
@@ -227,7 +253,7 @@ def solve_recaptcha(target_url_param, timeout=120):
 def main():
     parser = argparse.ArgumentParser(description="Solve reCAPTCHA checkbox and screenshot result.")
     parser.add_argument("--url", required=True, help="Target URL with reCAPTCHA")
-    parser.add_argument("--timeout", type=int, default=120, help="Timeout in seconds")
+    parser.add_argument("--timeout", type=int, default=180000, help="Timeout in milliseconds")
     parser.add_argument("--no-screenshots", action="store_true", help="Skip screenshot saving")
     args = parser.parse_args()
     

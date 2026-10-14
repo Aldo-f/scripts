@@ -24,7 +24,8 @@ import sys, os, json, subprocess, re, sqlite3, hashlib
 from datetime import datetime
 
 # Config — override via env vars if needed
-DB = os.environ.get("EMAIL_SEARCH_DB", os.path.expanduser("~/.hermes/email_queries.db"))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DB = os.environ.get("EMAIL_SEARCH_DB", os.path.join(SCRIPT_DIR, "email_queries.db"))
 HIMALAYA = os.environ.get("HIMALAYA_BIN", "himalaya")
 
 
@@ -204,29 +205,34 @@ METHODS = [
 ]
 
 
+def build_body_query(query):
+    """Build Himalayan DSL body query with lowercase AND/OR between terms.
+    himalaya requires lowercase 'and'/'or' between filters."""
+    terms = [t.strip() for t in query.lower().split() if t.strip() and len(t) >= 2]
+    skip = {"en", "de", "het", "een", "van", "in", "op", "bij", "voor", "af", "om"}
+    meaningful = [t for t in terms if t not in skip][:5]
+    if not meaningful:
+        meaningful = terms[:3] if terms else ["3d"]
+    # Use OR for robust matching: any matching body term finds the mail
+    return " or ".join(f"body {t}" for t in meaningful)
+
+
 def run_search_method(query, method):
     """Execute a single search method and return parsed emails."""
     if method == "raw":
+        # Pass raw query directly — user can include DSL manually
         results = himalaya_search(query)
     elif method == "body":
-        # Use first 8 terms for body search (more coverage)
-        query_terms = query.lower().split()
-        body_query = "body " + " ".join(query_terms[:8])
-        results = himalaya_search(body_query)
-        # Debug: print first few lines
-        if not results and len(query_terms) >= 2:
-            print(f"  DEBUG body: terms={query_terms[:8]}, query={body_query}")
+        body_q = build_body_query(query)
+        results = himalaya_search(body_q)
     elif method == "sender":
-        query_lower = query.lower().split()
-        # Search for sender containing the first term
-        sender_term = query_lower[0] if query_lower else query
-        results = himalaya_search(f"from {sender_term}")
+        first_term = next((t for t in query.lower().split()
+                           if len(t) >= 2 and t not in {"en","de","het","een","van","in","op","bij","voor","af"}), query)
+        results = himalaya_search(f"from {first_term}")
     elif method == "fuzzy":
         terms = query.lower().split()
-        # Get broad results then filter locally
-        broad_query = " ".join(terms[:3]) if len(terms) >= 3 else query
-        results = himalaya_search(broad_query)
-        # Local filter: require ≥2 matching terms
+        broad = " ".join(terms[:3]) if len(terms) >= 3 else query
+        results = himalaya_search(broad)
         filtered = []
         for line in results:
             matches = sum(1 for term in terms if term in line.lower())
@@ -235,7 +241,6 @@ def run_search_method(query, method):
         results = filtered
     else:
         results = himalaya_search(query)
-
     return parse_results(results, query)
 
 

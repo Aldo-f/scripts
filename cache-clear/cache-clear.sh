@@ -74,6 +74,15 @@ SYS_CACHES=(
     /var/cache/zypp/packages/*/*/*.rpm
 )
 
+# Container runtimes (podman/buildah/docker)
+# These are handled separately because they need pruning commands, not rm -rf
+CONTAINER_RUNTIMES=(
+    podman
+    buildah
+    docker
+    nerdctl
+)
+
 # ── Helpers ────────────────────────────────────────────────────
 log() {
     local msg="[ $(date '+%Y-%m-%d %H:%M:%S') ] $*"
@@ -163,6 +172,76 @@ swap_dance() {
     free -h 2>/dev/null | grep -E '^(Swap|Mem)' | sed 's/^/  /'
 }
 
+# ── Container runtime cleanup ─────────────────────────────────────
+# Cleans podman/buildah/docker caches, old containers, images, volumes
+clean_container_runtimes() {
+    local cleaned=0
+    for rt in "${CONTAINER_RUNTIMES[@]}"; do
+        if ! command -v "$rt" >/dev/null 2>&1; then
+            continue
+        fi
+        log "  → Cleaning $rt caches..."
+
+        case "$rt" in
+            podman)
+                # Podman: prune stopped containers, unused images, build cache, volumes
+                if as_root podman system prune -af --volumes 2>/dev/null; then
+                    log "    podman system prune: OK"
+                    cleaned=$((cleaned + 1))
+                fi
+                # Podman buildah cache (separate from system prune)
+                if as_root podman rmi $(podman images -q --filter "reference=*" 2>/dev/null | head -100) 2>/dev/null; then
+                    log "    podman image cleanup: OK"
+                fi
+                ;;
+            buildah)
+                # Buildah: prune build cache
+                if as_root buildah rmi $(buildah images -q 2>/dev/null | head -100) 2>/dev/null; then
+                    log "    buildah image cleanup: OK"
+                    cleaned=$((cleaned + 1))
+                fi
+                if as_root buildah prune 2>/dev/null; then
+                    log "    buildah prune: OK"
+                fi
+                ;;
+            docker)
+                # Docker: system prune, build cache, dangling volumes
+                if as_root docker system prune -af --volumes 2>/dev/null; then
+                    log "    docker system prune: OK"
+                    cleaned=$((cleaned + 1))
+                fi
+                # Docker buildx cache
+                if as_root docker builder prune -af 2>/dev/null; then
+                    log "    docker builder prune: OK"
+                fi
+                ;;
+            nerdctl)
+                # nerdctl: prune containers, images, volumes, build cache
+                if as_root nerdctl system prune -af --volumes 2>/dev/null; then
+                    log "    nerdctl system prune: OK"
+                    cleaned=$((cleaned + 1))
+                fi
+                ;;
+        esac
+    done
+    log "Container runtime cleanup done ($cleaned runtimes processed)."
+}
+
+# ── Docker/containerd image cache (k3s) ────────────────────────────
+# Cleans unused containerd images from k3s and other containerd setups
+clean_containerd() {
+    if ! command -v ctr >/dev/null 2>&1; then
+        return 0
+    fi
+    log "  → Cleaning containerd image cache..."
+    # Try k3s namespace first, then default
+    for ns in k8s.io default; do
+        if as_root ctr -n "$ns" images prune 2>/dev/null; then
+            log "    containerd ($ns): pruned"
+        fi
+    done
+}
+
 # ── Help ───────────────────────────────────────────────────────
 show_help() {
     cat <<EOF
@@ -187,6 +266,10 @@ Clears additionally when run as root (or with sudo):
   /var/cache/dnf/* (Fedora)
   systemd journal (vacuum to 50 MB)
   /tmp stale files
+  Container runtimes: podman, buildah, docker, nerdctl
+    - system prune (stopped containers, unused images, volumes)
+    - build cache cleanup
+    - containerd image cache (k3s)
 
 Preserves: root-level JSON caches, active sessions, clean.log
 Safe mode: swap dance on low-memory systems before large deletes
@@ -317,6 +400,12 @@ do_clean() {
     if command -v paccache >/dev/null 2>&1; then
         as_root paccache -rk1 2>/dev/null || true
     fi
+
+    # Clean container runtimes (podman/buildah/docker/nerdctl)
+    clean_container_runtimes
+
+    # Clean containerd image cache (k3s, Docker)
+    clean_containerd
 
     local total_after=0
     total_after=$(du -sh "$CACHE_ROOT" 2>/dev/null | cut -f1)
