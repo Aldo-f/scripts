@@ -1,3 +1,14 @@
 __pycache__/
 *.log
 *.tmp
+# Secrets and credentials
+*.key
+*.pem
+*.env
+.*.json
+credentials.json
+sofa-api-key.txt
+/secrets/
+/.secrets/
+/hermes/secrets/
+/.sofa/credentials.json
